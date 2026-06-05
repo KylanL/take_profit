@@ -105,18 +105,44 @@ async function fetchText(url, encoding = "utf-8") {
   return new TextDecoder(encoding).decode(await response.arrayBuffer());
 }
 
+async function fetchAsciiCompatibleText(url) {
+  const response = await fetch(url, {
+    headers: {
+      Referer: "https://finance.sina.com.cn",
+      "User-Agent": "Mozilla/5.0"
+    }
+  });
+  if (!response.ok) throw new Error(`Sina status ${response.status}`);
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  return String.fromCharCode(...bytes);
+}
+
 function toDailySymbol(symbol) {
   return String(symbol || "").replace(/^nf_/i, "").toUpperCase();
 }
 
+function productNameForRoot(root) {
+  return (PRODUCTS.find(product => product.root === root) || {}).name || root;
+}
+
+function nameFromSymbol(symbol) {
+  const cleaned = String(symbol || "").replace(/^nf_/i, "").toUpperCase();
+  const root = (cleaned.match(/^[A-Z]+/) || [""])[0];
+  const suffix = cleaned.slice(root.length);
+  const productName = productNameForRoot(root);
+  if (!suffix) return productName || cleaned;
+  if (suffix === "0") return `${productName}连续`;
+  return `${productName}${suffix}`;
+}
+
 async function fetchSinaQuote(symbol) {
   const safe = /^[a-zA-Z0-9_]+$/.test(symbol) ? symbol : "nf_I2701";
-  return fetchText(`https://hq.sinajs.cn/list=${safe}`, "gb18030");
+  return fetchAsciiCompatibleText(`https://hq.sinajs.cn/list=${safe}`);
 }
 
 async function fetchSinaQuotes(symbols) {
   const safe = symbols.filter(symbol => /^[a-zA-Z0-9_]+$/.test(symbol)).slice(0, 80);
-  return fetchText(`https://hq.sinajs.cn/list=${safe.join(",")}`, "gb18030");
+  return fetchAsciiCompatibleText(`https://hq.sinajs.cn/list=${safe.join(",")}`);
 }
 
 async function fetchSinaDailyKline(symbol) {
@@ -144,7 +170,7 @@ function parseSinaFutures(raw, symbol) {
   return {
     source: "sina",
     symbol,
-    name: fields[0] || symbol,
+    name: nameFromSymbol(symbol),
     time: fields[17] && quoteTime ? `${fields[17]} ${quoteTime}` : quoteTime,
     price,
     bid: Number(fields[6]) || null,
@@ -167,7 +193,7 @@ function parseSinaQuoteLines(raw) {
     if (!fields[0] || !Number.isFinite(price) || price <= 0) continue;
     items.push({
       symbol: match[1],
-      name: fields[0],
+      name: nameFromSymbol(match[1]),
       time: fields[17] && fields[1] && fields[1].length === 6
         ? `${fields[17]} ${fields[1].slice(0, 2)}:${fields[1].slice(2, 4)}:${fields[1].slice(4, 6)}`
         : "",
