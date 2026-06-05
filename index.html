@@ -1,0 +1,1325 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>多品种 ATR 止盈止损看板</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f7f5;
+      --panel: #ffffff;
+      --ink: #17211b;
+      --muted: #66746c;
+      --line: #dce5df;
+      --accent: #0f7b63;
+      --accent-soft: #e3f3ee;
+      --gold: #e3aa2d;
+      --danger: #c04444;
+      --good: #14845d;
+      --shadow: 0 18px 48px rgba(28, 43, 34, .12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(120deg, rgba(15, 123, 99, .08), rgba(227, 170, 45, .1)),
+        var(--bg);
+    }
+
+    main {
+      width: min(1480px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 28px 0;
+    }
+
+    header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+      max-width: 760px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 14px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    button.icon {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      color: var(--danger);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      min-height: 92px;
+      padding: 14px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .metric strong {
+      font-size: 28px;
+      line-height: 1;
+      overflow-wrap: anywhere;
+    }
+
+    .logic-panel {
+      margin-bottom: 14px;
+      padding: 16px;
+      background:
+        linear-gradient(135deg, rgba(15, 123, 99, .08), rgba(227, 170, 45, .08)),
+        var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+    }
+
+    .logic-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .logic-head h2 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    .logic-head span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .logic-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(170px, 1fr));
+      gap: 10px;
+    }
+
+    .logic-card {
+      padding: 12px;
+      background: rgba(255, 255, 255, .78);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .logic-card b {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--accent);
+      font-size: 13px;
+    }
+
+    .logic-card code {
+      display: block;
+      margin-bottom: 8px;
+      padding: 8px;
+      background: #eef5f1;
+      border-radius: 6px;
+      color: var(--ink);
+      font-family: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: normal;
+    }
+
+    .logic-card small {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(860px, 100%), 1fr));
+      gap: 12px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 9px;
+      background: #fbfdfc;
+      color: var(--ink);
+      font: inherit;
+      font-size: 14px;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(15, 123, 99, .14);
+    }
+
+    input[readonly] {
+      background: #f5faf7;
+      color: #1f4639;
+      font-weight: 800;
+    }
+
+    .tier {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: #edf3ef;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .tier.t1 {
+      background: #fff6d8;
+      color: #8a6210;
+    }
+
+    .tier.t2 {
+      background: #e9f6ff;
+      color: #186184;
+    }
+
+    .tier.t3 {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .status.live {
+      color: var(--good);
+      font-weight: 800;
+    }
+
+    .status.error {
+      color: var(--danger);
+      font-weight: 800;
+    }
+
+    .flash {
+      animation: flash .35s ease;
+    }
+
+    @keyframes flash {
+      0% {
+        background: rgba(227, 170, 45, .45);
+      }
+      100% {
+        background: #f5faf7;
+      }
+    }
+
+    .position-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .position-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: #f8fbf9;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .position-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      font-weight: 900;
+    }
+
+    .position-title span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1.2fr .8fr .8fr;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .form-grid label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      padding: 12px 14px;
+      background: #fbfdfc;
+      border-top: 1px solid var(--line);
+    }
+
+    .result-group {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .result-group.risk {
+      grid-column: 4;
+    }
+
+    .result-group-title {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+    }
+
+    .result-group-body {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      height: 100%;
+    }
+
+    .span-2 {
+      grid-column: 1 / -1;
+    }
+
+    .result-box {
+      min-height: 74px;
+      padding: 10px 11px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-width: 0;
+    }
+
+    .result-box span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .result-box strong {
+      font-size: clamp(20px, 1.8vw, 28px);
+      line-height: 1.05;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .result-box small {
+      color: var(--muted);
+      font-size: 10.5px;
+      font-weight: 700;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tier-box strong {
+      font-size: 18px;
+    }
+
+    .tier-box strong.tier {
+      width: max-content;
+      max-width: 100%;
+      min-height: 28px;
+      padding: 0 10px;
+    }
+
+    .status-strip {
+      padding: 10px 14px;
+      background: #fbfdfc;
+      border-top: 1px solid var(--line);
+    }
+
+    @media (max-width: 920px) {
+      main {
+        width: min(100% - 20px, 760px);
+        padding: 20px 0;
+      }
+
+      header {
+        display: grid;
+        align-items: start;
+      }
+
+      .summary {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .logic-head {
+        display: grid;
+      }
+
+      .logic-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .board,
+      .form-grid,
+      .result-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .result-group-body {
+        grid-template-columns: 1fr;
+      }
+
+      .result-group.risk {
+        grid-column: auto;
+      }
+    }
+
+    @media (max-width: 560px) {
+      main {
+        width: 100%;
+        padding: 0;
+      }
+
+      header {
+        gap: 12px;
+        padding: 16px 14px 10px;
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+
+      .subtitle {
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .toolbar {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .toolbar button {
+        width: 100%;
+      }
+
+      .summary {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        padding: 0 10px;
+        margin-bottom: 10px;
+      }
+
+      .metric {
+        min-height: 72px;
+        padding: 10px;
+        border-radius: 0;
+      }
+
+      .metric strong {
+        font-size: 22px;
+      }
+
+      .logic-panel {
+        margin: 0 10px 10px;
+        padding: 12px;
+        border-radius: 0;
+      }
+
+      .logic-head {
+        gap: 4px;
+        margin-bottom: 8px;
+      }
+
+      .logic-head h2 {
+        font-size: 16px;
+      }
+
+      .logic-head span {
+        font-size: 11px;
+        line-height: 1.35;
+      }
+
+      .logic-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .logic-card {
+        padding: 9px;
+      }
+
+      .logic-card b {
+        margin-bottom: 6px;
+        font-size: 12px;
+      }
+
+      .logic-card code {
+        margin-bottom: 6px;
+        padding: 7px;
+        font-size: 11px;
+        line-height: 1.35;
+      }
+
+      .logic-card small {
+        display: block;
+        font-size: 10.5px;
+        line-height: 1.35;
+      }
+
+      .board {
+        gap: 10px;
+      }
+
+      .position-card {
+        border-left: 0;
+        border-right: 0;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      .position-card-head {
+        padding: 12px 10px;
+      }
+
+      .position-title {
+        font-size: 18px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        padding: 10px;
+      }
+
+      .form-grid label:first-child,
+      .form-grid label:nth-child(2) {
+        grid-column: span 1;
+      }
+
+      .form-grid label:nth-child(4) {
+        grid-column: 1 / -1;
+      }
+
+      input,
+      select {
+        height: 44px;
+        font-size: 18px;
+        padding: 0 10px;
+      }
+
+      .result-grid {
+        gap: 8px;
+        padding: 10px;
+      }
+
+      .result-group {
+        gap: 6px;
+        padding: 8px;
+        background: #f4f8f5;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+
+      .result-group-title {
+        font-size: 12px;
+        color: var(--accent);
+      }
+
+      .result-group-body {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+      }
+
+      .result-box {
+        min-height: 68px;
+        padding: 8px;
+      }
+
+      .result-box span {
+        font-size: 10px;
+      }
+
+      .result-box strong {
+        font-size: 22px;
+        overflow: visible;
+        text-overflow: clip;
+      }
+
+      .result-box small {
+        font-size: 10px;
+      }
+
+      .tier-box strong.tier {
+        min-height: 24px;
+        font-size: 15px;
+        padding: 0 8px;
+      }
+
+      .status-strip {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>多品种 ATR 止盈止损看板</h1>
+        <p class="subtitle">每一行是一笔持仓。实时价、开仓以来最高/最低盈利价、Tier 和保护价会分别自动更新。</p>
+      </div>
+      <div class="toolbar">
+        <button class="primary" id="addPosition" type="button">新增持仓</button>
+        <button id="refreshNow" type="button">立即刷新</button>
+      </div>
+    </header>
+
+    <section class="summary" aria-label="summary">
+      <div class="metric">
+        <span>持仓数量</span>
+        <strong id="positionCount">0</strong>
+      </div>
+      <div class="metric">
+        <span>实时连接</span>
+        <strong id="liveCount">0</strong>
+      </div>
+      <div class="metric">
+        <span>最高 Tier</span>
+        <strong id="topTier">-</strong>
+      </div>
+      <div class="metric">
+        <span>刷新次数</span>
+        <strong id="refreshCount">0</strong>
+      </div>
+    </section>
+
+    <section class="logic-panel" aria-label="保护价计算逻辑">
+      <div class="logic-head">
+        <h2>保护价计算逻辑</h2>
+        <span>阶段按最高 ATR 收益判定；保护价按最佳盈利价或开仓价计算</span>
+      </div>
+      <div class="logic-grid">
+        <div class="logic-card">
+          <b>初始止损</b>
+          <code>保护价 = 开仓价 ± 1.5 × ATR</code>
+          <small>做多：开仓价 - 1.5 ATR；做空：开仓价 + 1.5 ATR。</small>
+        </div>
+        <div class="logic-card">
+          <b>Tier 1：盈利 ≥ 1 ATR</b>
+          <code>保护价 = 开仓价 ± 0.2 × ATR</code>
+          <small>锁定小幅盈利；做多加 0.2 ATR，做空减 0.2 ATR。</small>
+        </div>
+        <div class="logic-card">
+          <b>Tier 2：盈利 &gt; 1.5 ATR</b>
+          <code>保护价 = 最佳盈利价 ∓ 1.2 × ATR</code>
+          <small>做多：最高价 - 1.2 ATR；做空：最低价 + 1.2 ATR。</small>
+        </div>
+        <div class="logic-card">
+          <b>Tier 3：盈利 &gt; 2 ATR</b>
+          <code>保护价 = 最佳盈利价 ∓ 0.8 × ATR</code>
+          <small>趋势更强时收紧保护；做多减 0.8 ATR，做空加 0.8 ATR。</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="board" id="positionsBoard"></section>
+  </main>
+
+  <script>
+    const API_PORT_HINT = "http://127.0.0.1:8769/index.html";
+    const STORAGE_KEY = "atr_multi_positions_v1";
+    const pollMs = 2000;
+    const bestMs = 2500;
+
+    const els = {
+      board: document.querySelector("#positionsBoard"),
+      add: document.querySelector("#addPosition"),
+      refresh: document.querySelector("#refreshNow"),
+      positionCount: document.querySelector("#positionCount"),
+      liveCount: document.querySelector("#liveCount"),
+      topTier: document.querySelector("#topTier"),
+      refreshCount: document.querySelector("#refreshCount")
+    };
+
+    let positions = loadPositions();
+    let products = [];
+    let contractsByRoot = {};
+    let refreshes = 0;
+    let quoteLoop = null;
+    let quoteTimer = null;
+    let quoteInFlight = false;
+    let isEditing = false;
+    let editReleaseTimer = null;
+
+    function today() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function makePosition(overrides = {}) {
+      return {
+        id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random()}`,
+        root: "I",
+        symbol: "nf_I2701",
+        side: "long",
+        entryDate: today(),
+        entry: 100,
+        atr: 2,
+        current: null,
+        best: null,
+        quoteTime: "",
+        bid: null,
+        ask: null,
+        bestDate: "",
+        bestBasis: "",
+        status: "\u7b49\u5f85\u884c\u60c5",
+        error: "",
+        lastPrice: null,
+        lastBestFetch: 0,
+        ...overrides
+      };
+    }
+
+    function loadPositions() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        if (Array.isArray(saved) && saved.length) return saved.map(item => makePosition(item));
+      } catch {
+      }
+      return [makePosition()];
+    }
+
+    function savePositions() {
+      const slim = positions.map(({ id, root, symbol, side, entryDate, entry, atr }) => ({
+        id,
+        root,
+        symbol,
+        side,
+        entryDate,
+        entry,
+        atr
+      }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(slim));
+    }
+
+    function fmt(value, digits = 4) {
+      const number = Number(value);
+      if (!Number.isFinite(number)) return "-";
+      return number.toLocaleString("zh-CN", {
+        maximumFractionDigits: digits,
+        minimumFractionDigits: number < 1 && number !== 0 ? Math.min(4, digits) : 0
+      });
+    }
+
+    function levelFor(profitAtr) {
+      if (profitAtr > 2) return "Tier 3";
+      if (profitAtr > 1.5) return "Tier 2";
+      if (profitAtr >= 1) return "Tier 1";
+      return "\u521d\u59cb\u6b62\u635f";
+    }
+
+    function calc(position) {
+      const entry = Number(position.entry);
+      const atr = Number(position.atr);
+      const current = Number(position.current);
+      const best = Number(position.best);
+      const sign = position.side === "long" ? 1 : -1;
+      const valid = entry > 0 && atr > 0 && current > 0 && best > 0;
+      if (!valid) return null;
+
+      const priceProfit = (current - entry) * sign;
+      const bestProfit = (best - entry) * sign;
+      const profitAtr = priceProfit / atr;
+      const bestProfitAtr = bestProfit / atr;
+      const tier = levelFor(bestProfitAtr);
+      const baseStop = entry - sign * 1.5 * atr;
+      let protect = baseStop;
+
+      if (tier === "Tier 1") protect = entry + sign * 0.2 * atr;
+      if (tier === "Tier 2") protect = best - sign * 1.2 * atr;
+      if (tier === "Tier 3") protect = best - sign * 0.8 * atr;
+
+      return {
+        priceProfit,
+        bestProfit,
+        profitAtr,
+        bestProfitAtr,
+        tier,
+        protect,
+        distance: Math.abs(current - protect)
+      };
+    }
+
+    function tierClass(tier) {
+      if (tier === "Tier 1") return "t1";
+      if (tier === "Tier 2") return "t2";
+      if (tier === "Tier 3") return "t3";
+      return "";
+    }
+
+    function productOptions(position) {
+      const list = products.length ? products : [{ root: position.root || "I", name: "\u94c1\u77ff\u77f3" }];
+      return list.map(product => (
+        `<option value="${product.root}" ${product.root === position.root ? "selected" : ""}>${product.name}</option>`
+      )).join("");
+    }
+
+    function contractLabel(contract, root) {
+      const symbol = String(contract.symbol || "").replace(/^nf_/i, "");
+      if (symbol.toUpperCase() === `${root}0`.toUpperCase()) return "\u4e3b\u8fde";
+      return symbol.replace(new RegExp(`^${root}`, "i"), "");
+    }
+
+    function contractOptions(position) {
+      const contracts = contractsByRoot[position.root] || [];
+      if (!contracts.length) {
+        const fallback = position.symbol && String(position.symbol).toUpperCase().includes(`_${position.root}`)
+          ? position.symbol
+          : `nf_${position.root || "I"}0`;
+        return `<option value="${fallback}">${fallback.replace(/^nf_/i, "")} \u4e3b\u8fde</option>`;
+      }
+
+      return contracts.map(contract => (
+        `<option value="${contract.symbol}" ${contract.symbol === position.symbol ? "selected" : ""}>${contractLabel(contract, position.root)}</option>`
+      )).join("");
+    }
+
+    function productName(root) {
+      return (products.find(product => product.root === root) || {}).name || root;
+    }
+
+    function selectedContractLabel(position) {
+      const contract = (contractsByRoot[position.root] || []).find(item => item.symbol === position.symbol);
+      if (contract) return contractLabel(contract, position.root);
+      return String(position.symbol || "").replace(/^nf_/i, "").replace(new RegExp(`^${position.root}`, "i"), "");
+    }
+
+    function setPosition(id, patch) {
+      const position = positions.find(item => item.id === id);
+      if (!position) return;
+      Object.assign(position, patch);
+      savePositions();
+      render();
+    }
+
+    function field(position, key, type = "number", attrs = "") {
+      const value = position[key] ?? "";
+      return `<input data-id="${position.id}" data-field="${key}" type="${type}" value="${value}" ${attrs}>`;
+    }
+
+    function renderCard(position) {
+      const result = calc(position);
+      const tier = result ? result.tier : "-";
+      const statusClass = position.error ? "error" : position.current ? "live" : "";
+      const bestLabel = position.side === "long" ? "\u5f00\u4ed3\u4ee5\u6765\u6700\u9ad8\u4ef7" : "\u5f00\u4ed3\u4ee5\u6765\u6700\u4f4e\u4ef7";
+
+      return `
+        <article class="position-card" data-card="${position.id}">
+          <div class="position-card-head">
+            <div class="position-title">
+              <span>${productName(position.root)} ${selectedContractLabel(position)}</span>
+            </div>
+            <button class="icon" data-remove="${position.id}" title="\u5220\u9664">x</button>
+          </div>
+          <div class="form-grid">
+            <label>\u54c1\u79cd
+              <select data-id="${position.id}" data-field="root">${productOptions(position)}</select>
+            </label>
+            <label>\u5408\u7ea6
+              <select data-id="${position.id}" data-field="symbol">${contractOptions(position)}</select>
+            </label>
+            <label>\u65b9\u5411
+              <select data-id="${position.id}" data-field="side">
+                <option value="long" ${position.side === "long" ? "selected" : ""}>\u505a\u591a</option>
+                <option value="short" ${position.side === "short" ? "selected" : ""}>\u505a\u7a7a</option>
+              </select>
+            </label>
+            <label>\u5f00\u4ed3\u65e5\u671f ${field(position, "entryDate", "date")}</label>
+            <label>\u5f00\u4ed3\u4ef7 ${field(position, "entry", "number", "step=\"0.0001\" min=\"0\"")}</label>
+            <label>ATR ${field(position, "atr", "number", "step=\"0.0001\" min=\"0\"")}</label>
+          </div>
+          <div class="result-grid">
+            <div class="result-group entry">
+              <div class="result-group-title">\u5f00\u4ed3</div>
+              <div class="result-group-body">
+                <div class="result-box">
+                  <span>\u5f00\u4ed3\u4ef7</span>
+                  <strong>${fmt(position.entry)}</strong>
+                  <small>${position.entryDate || "-"}</small>
+                </div>
+                <div class="result-box">
+                  <span>ATR</span>
+                  <strong>${fmt(position.atr)}</strong>
+                  <small>\u6536\u76ca / \u4fdd\u62a4\u57fa\u51c6</small>
+                </div>
+                <div class="result-box tier-box">
+                  <span>\u5f53\u524d\u9636\u6bb5</span>
+                  <strong class="tier ${tierClass(tier)}">${tier}</strong>
+                  <small>${result ? `${result.bestProfitAtr.toFixed(2)} ATR \u5386\u53f2\u6700\u9ad8` : "\u7b49\u5f85\u884c\u60c5"}</small>
+                </div>
+              </div>
+            </div>
+            <div class="result-group">
+              <div class="result-group-title">\u5f53\u524d</div>
+              <div class="result-group-body">
+                <div class="result-box">
+                  <span>\u5f53\u524d\u4ef7</span>
+                  <strong data-id="${position.id}" data-field="current">${fmt(position.current)}</strong>
+                  <small>\u4e70 ${fmt(position.bid)} / \u5356 ${fmt(position.ask)}</small>
+                </div>
+                <div class="result-box">
+                  <span>\u76c8\u4e8f\u70b9\u6570</span>
+                  <strong>${result ? fmt(result.priceProfit) : "-"}</strong>
+                  <small>${position.side === "long" ? "\u5f53\u524d - \u5f00\u4ed3" : "\u5f00\u4ed3 - \u5f53\u524d"}</small>
+                </div>
+                <div class="result-box">
+                  <span>\u5f53\u524d ATR \u6536\u76ca</span>
+                  <strong>${result ? `${result.profitAtr.toFixed(2)} ATR` : "-"}</strong>
+                  <small>${result ? `${fmt(result.priceProfit)} \u70b9 / ATR` : "\u6309\u5f53\u524d\u4ef7"}</small>
+                </div>
+              </div>
+            </div>
+            <div class="result-group best">
+              <div class="result-group-title">\u6700\u4f73</div>
+              <div class="result-group-body">
+                <div class="result-box">
+                  <span>\u6700\u4f73\u76c8\u5229\u4ef7</span>
+                  <strong>${fmt(position.best)}</strong>
+                  <small>${bestLabel} ${position.bestDate || "-"}</small>
+                </div>
+                <div class="result-box">
+                  <span>\u6700\u9ad8 ATR \u6536\u76ca</span>
+                  <strong>${result ? `${result.bestProfitAtr.toFixed(2)} ATR` : "-"}</strong>
+                  <small>${result ? `${fmt(result.bestProfit)} \u70b9 / ATR` : "\u6309\u6700\u4f73\u4ef7"}</small>
+                </div>
+              </div>
+            </div>
+            <div class="result-group risk">
+              <div class="result-group-title">\u98ce\u63a7</div>
+              <div class="result-group-body">
+                <div class="result-box">
+                  <span>\u4fdd\u62a4\u4ef7</span>
+                  <strong>${result ? fmt(result.protect) : "-"}</strong>
+                  <small>\u8ddd\u5f53\u524d ${result ? fmt(result.distance) : "-"}</small>
+                </div>
+                <div class="result-box">
+                  <span>\u521d\u59cb\u6b62\u635f</span>
+                  <strong>${position.entry > 0 && position.atr > 0 ? fmt(Number(position.entry) + (position.side === "long" ? -1 : 1) * 1.5 * Number(position.atr)) : "-"}</strong>
+                  <small>\u5f00\u4ed3\u4ef7 +/- 1.5 ATR</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="status-strip status ${statusClass}">${position.error || position.status}</div>
+        </article>
+      `;
+    }
+
+    function renderSummary() {
+      const results = positions.map(calc).filter(Boolean);
+      const live = positions.filter(item => item.current && !item.error).length;
+      const tierRank = { "\u521d\u59cb\u6b62\u635f": 0, "Tier 1": 1, "Tier 2": 2, "Tier 3": 3 };
+      const top = results.map(item => item.tier).sort((a, b) => tierRank[b] - tierRank[a])[0] || "-";
+
+      els.positionCount.textContent = String(positions.length);
+      els.liveCount.textContent = String(live);
+      els.topTier.textContent = top;
+      els.refreshCount.textContent = String(refreshes);
+    }
+
+    function render(force = false) {
+      if (isEditing && !force) {
+        renderSummary();
+        return;
+      }
+
+      els.board.innerHTML = positions.map(renderCard).join("");
+      renderSummary();
+    }
+
+    function flashCurrent(id) {
+      document.querySelectorAll(`[data-id="${id}"][data-field="current"]`).forEach(input => {
+        input.classList.remove("flash");
+        void input.offsetWidth;
+        input.classList.add("flash");
+      });
+    }
+
+    async function fetchQuote(position) {
+      const symbol = encodeURIComponent(position.symbol || "nf_I2701");
+      const response = await fetch(`/api/quote?symbol=${symbol}&t=${Date.now()}`, { cache: "no-store" });
+      if (!response.ok) throw new Error("\u5b9e\u65f6\u4ef7\u8fde\u63a5\u5931\u8d25");
+      return response.json();
+    }
+
+    async function fetchBest(position, force = false) {
+      if (!force && Date.now() - Number(position.lastBestFetch || 0) < bestMs) return null;
+      position.lastBestFetch = Date.now();
+      const symbol = encodeURIComponent(position.symbol || "nf_I2701");
+      const side = encodeURIComponent(position.side);
+      const entryDate = encodeURIComponent(position.entryDate || today());
+      const response = await fetch(`/api/best?symbol=${symbol}&side=${side}&entryDate=${entryDate}&t=${Date.now()}`, {
+        cache: "no-store"
+      });
+      if (!response.ok) throw new Error("\u6700\u4f73\u76c8\u5229\u4ef7\u8fde\u63a5\u5931\u8d25");
+      return response.json();
+    }
+
+    async function loadProducts() {
+      try {
+        const response = await fetch(`/api/products?t=${Date.now()}`, { cache: "no-store" });
+        if (!response.ok) throw new Error("products missing");
+        const data = await response.json();
+        products = Array.isArray(data.products) ? data.products : [];
+      } catch {
+        products = [
+  { root: "A", name: "豆一", exchange: "DCE" },
+  { root: "B", name: "豆二", exchange: "DCE" },
+  { root: "M", name: "豆粕", exchange: "DCE" },
+  { root: "Y", name: "豆油", exchange: "DCE" },
+  { root: "P", name: "棕榈油", exchange: "DCE" },
+  { root: "C", name: "玉米", exchange: "DCE" },
+  { root: "CS", name: "玉米淀粉", exchange: "DCE" },
+  { root: "I", name: "铁矿石", exchange: "DCE" },
+  { root: "J", name: "焦炭", exchange: "DCE" },
+  { root: "JM", name: "焦煤", exchange: "DCE" },
+  { root: "L", name: "聚乙烯", exchange: "DCE" },
+  { root: "V", name: "PVC", exchange: "DCE" },
+  { root: "PP", name: "聚丙烯", exchange: "DCE" },
+  { root: "EB", name: "苯乙烯", exchange: "DCE" },
+  { root: "BZ", name: "纯苯", exchange: "DCE" },
+  { root: "EG", name: "乙二醇", exchange: "DCE" },
+  { root: "JD", name: "鸡蛋", exchange: "DCE" },
+  { root: "LH", name: "生猪", exchange: "DCE" },
+  { root: "PG", name: "液化石油气", exchange: "DCE" },
+  { root: "RR", name: "粳米", exchange: "DCE" },
+  { root: "LG", name: "原木", exchange: "DCE" },
+  { root: "FB", name: "纤维板", exchange: "DCE" },
+  { root: "BB", name: "胶合板", exchange: "DCE" },
+  { root: "CU", name: "铜", exchange: "SHFE" },
+  { root: "AL", name: "铝", exchange: "SHFE" },
+  { root: "ZN", name: "锌", exchange: "SHFE" },
+  { root: "PB", name: "铅", exchange: "SHFE" },
+  { root: "NI", name: "镍", exchange: "SHFE" },
+  { root: "SN", name: "锡", exchange: "SHFE" },
+  { root: "AO", name: "氧化铝", exchange: "SHFE" },
+  { root: "AU", name: "黄金", exchange: "SHFE" },
+  { root: "AG", name: "白银", exchange: "SHFE" },
+  { root: "RB", name: "螺纹钢", exchange: "SHFE" },
+  { root: "HC", name: "热卷", exchange: "SHFE" },
+  { root: "SS", name: "不锈钢", exchange: "SHFE" },
+  { root: "WR", name: "线材", exchange: "SHFE" },
+  { root: "RU", name: "橡胶", exchange: "SHFE" },
+  { root: "BR", name: "丁二烯橡胶", exchange: "SHFE" },
+  { root: "BU", name: "沥青", exchange: "SHFE" },
+  { root: "FU", name: "燃料油", exchange: "SHFE" },
+  { root: "SP", name: "纸浆", exchange: "SHFE" },
+  { root: "SC", name: "原油", exchange: "INE" },
+  { root: "LU", name: "低硫燃料油", exchange: "INE" },
+  { root: "NR", name: "20号胶", exchange: "INE" },
+  { root: "BC", name: "国际铜", exchange: "INE" },
+  { root: "EC", name: "欧线集运", exchange: "INE" },
+  { root: "TA", name: "PTA", exchange: "CZCE" },
+  { root: "PX", name: "对二甲苯", exchange: "CZCE" },
+  { root: "PR", name: "瓶片", exchange: "CZCE" },
+  { root: "PF", name: "短纤", exchange: "CZCE" },
+  { root: "MA", name: "甲醇", exchange: "CZCE" },
+  { root: "UR", name: "尿素", exchange: "CZCE" },
+  { root: "SH", name: "烧碱", exchange: "CZCE" },
+  { root: "FG", name: "玻璃", exchange: "CZCE" },
+  { root: "SA", name: "纯碱", exchange: "CZCE" },
+  { root: "SF", name: "硅铁", exchange: "CZCE" },
+  { root: "SM", name: "锰硅", exchange: "CZCE" },
+  { root: "CF", name: "棉花", exchange: "CZCE" },
+  { root: "CY", name: "棉纱", exchange: "CZCE" },
+  { root: "SR", name: "白糖", exchange: "CZCE" },
+  { root: "AP", name: "苹果", exchange: "CZCE" },
+  { root: "PK", name: "花生", exchange: "CZCE" },
+  { root: "CJ", name: "红枣", exchange: "CZCE" },
+  { root: "RM", name: "菜粕", exchange: "CZCE" },
+  { root: "OI", name: "菜油", exchange: "CZCE" },
+  { root: "RS", name: "油菜籽", exchange: "CZCE" },
+  { root: "WH", name: "强麦", exchange: "CZCE" },
+  { root: "PM", name: "普麦", exchange: "CZCE" },
+  { root: "RI", name: "早籼稻", exchange: "CZCE" },
+  { root: "JR", name: "粳稻", exchange: "CZCE" },
+  { root: "LR", name: "晚籼稻", exchange: "CZCE" },
+  { root: "ZC", name: "动力煤", exchange: "CZCE" },
+  { root: "SI", name: "工业硅", exchange: "GFEX" },
+  { root: "LC", name: "碳酸锂", exchange: "GFEX" },
+  { root: "PS", name: "多晶硅", exchange: "GFEX" },
+  { root: "AD", name: "铸造铝合金", exchange: "GFEX" },
+  { root: "PL", name: "铂", exchange: "GFEX" },
+  { root: "PA", name: "钯", exchange: "GFEX" }
+];
+      }
+    }
+
+    async function loadContracts(root) {
+      const safeRoot = root || "I";
+      if (contractsByRoot[safeRoot]?.length) return contractsByRoot[safeRoot];
+
+      try {
+        const response = await fetch(`/api/contracts?root=${encodeURIComponent(safeRoot)}&t=${Date.now()}`, {
+          cache: "no-store"
+        });
+        if (!response.ok) throw new Error("contracts missing");
+        const data = await response.json();
+        contractsByRoot[safeRoot] = Array.isArray(data.contracts) ? data.contracts : [];
+      } catch {
+        contractsByRoot[safeRoot] = [];
+      }
+
+      return contractsByRoot[safeRoot];
+    }
+
+    async function ensureContractsForPositions() {
+      const roots = [...new Set(positions.map(position => position.root || "I"))];
+      await Promise.all(roots.map(loadContracts));
+    }
+
+    async function refreshPosition(position, forceBest = false) {
+      try {
+        const quote = await fetchQuote(position);
+        const nextPrice = Number(quote.price);
+        const changed = Number.isFinite(position.lastPrice) && nextPrice !== position.lastPrice;
+        position.current = nextPrice;
+        position.lastPrice = nextPrice;
+        position.bid = quote.bid;
+        position.ask = quote.ask;
+        position.quoteTime = quote.time || "";
+        position.status = `${quote.name || position.symbol} ${position.quoteTime} \u81ea\u52a8\u5237\u65b0`;
+        position.error = "";
+
+        const best = await fetchBest(position, forceBest);
+        if (best) {
+          position.best = Number(best.bestPrice);
+          position.bestDate = best.bestDate || "";
+          position.bestBasis = best.basis || "";
+        }
+
+        if (changed) requestAnimationFrame(() => flashCurrent(position.id));
+      } catch (error) {
+        position.error = error.message || "\u8fde\u63a5\u5931\u8d25\uff0c\u7ee7\u7eed\u91cd\u8bd5";
+      }
+    }
+
+    async function refreshAll(forceBest = false) {
+      if (quoteInFlight) return;
+      if (location.protocol === "file:") {
+        positions.forEach(position => {
+          position.error = `\u8bf7\u7528 ${API_PORT_HINT} \u6253\u5f00\u5b9e\u65f6\u7248`;
+        });
+        render();
+        return;
+      }
+
+      try {
+        quoteInFlight = true;
+        await Promise.all(positions.map(position => refreshPosition(position, forceBest)));
+        refreshes += 1;
+        render();
+      } finally {
+        quoteInFlight = false;
+      }
+    }
+
+    function startLoop() {
+      if (quoteLoop) clearInterval(quoteLoop);
+      if (quoteTimer) clearTimeout(quoteTimer);
+
+      const tick = async (forceBest = false) => {
+        await refreshAll(forceBest);
+        quoteTimer = setTimeout(() => tick(false), pollMs);
+      };
+
+      tick(true);
+    }
+
+    document.addEventListener("input", event => {
+      const target = event.target;
+      const id = target.dataset.id;
+      const fieldName = target.dataset.field;
+      if (!id || !fieldName || target.readOnly) return;
+      const value = target.type === "number" ? Number(target.value) : target.value;
+      const position = positions.find(item => item.id === id);
+      if (!position) return;
+      position[fieldName] = value;
+      savePositions();
+      renderSummary();
+    });
+
+    document.addEventListener("focusin", event => {
+      if (!event.target.dataset.field) return;
+      clearTimeout(editReleaseTimer);
+      isEditing = true;
+    });
+
+    document.addEventListener("focusout", event => {
+      if (!event.target.dataset.field) return;
+      clearTimeout(editReleaseTimer);
+      editReleaseTimer = setTimeout(() => {
+        isEditing = false;
+        render(true);
+      }, 250);
+    });
+
+    document.addEventListener("change", event => {
+      const target = event.target;
+      const id = target.dataset.id;
+      const fieldName = target.dataset.field;
+      if (!id || !fieldName) return;
+      const value = target.type === "number" ? Number(target.value) : target.value;
+      const position = positions.find(item => item.id === id);
+      if (!position) return;
+      position[fieldName] = value;
+      if (fieldName === "root") {
+        position.lastBestFetch = 0;
+        loadContracts(value).then(contracts => {
+          position.symbol = contracts.length ? contracts[0].symbol : `nf_${value}0`;
+          savePositions();
+          render(true);
+          refreshPosition(position, true).then(() => render(true));
+        });
+      }
+      if (["symbol", "side", "entryDate"].includes(fieldName)) {
+        position.lastBestFetch = 0;
+        refreshPosition(position, true).then(() => render(true));
+      }
+      savePositions();
+      render(true);
+    });
+
+    document.addEventListener("click", event => {
+      const removeId = event.target.dataset.remove;
+      if (!removeId) return;
+      positions = positions.filter(item => item.id !== removeId);
+      if (!positions.length) positions.push(makePosition());
+      savePositions();
+      render(true);
+      refreshAll(true);
+    });
+
+    els.add.addEventListener("click", () => {
+      positions.push(makePosition());
+      savePositions();
+      render(true);
+      refreshAll(true);
+    });
+
+    els.refresh.addEventListener("click", () => refreshAll(true));
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) refreshAll(true);
+    });
+
+    window.addEventListener("focus", () => refreshAll(true));
+    window.addEventListener("online", () => refreshAll(true));
+
+    async function boot() {
+      await loadProducts();
+      await ensureContractsForPositions();
+      render();
+      startLoop();
+    }
+
+    boot();
+  </script>
+</body>
+</html>
+

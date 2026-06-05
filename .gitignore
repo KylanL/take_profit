@@ -1,0 +1,5 @@
+node_modules/
+*.log
+cloudflared.exe
+.idea/
+take_profit_deploy.zip
