@@ -3,6 +3,6 @@
     "start": "deno run --allow-net --allow-read deno_server.js"
   },
   "deploy": {
-    "entrypoint": "deno_server.js"
+    "entrypoint": "main.ts"
   }
 }

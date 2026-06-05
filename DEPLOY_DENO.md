@@ -28,7 +28,7 @@ Deno Deploy 官方提供免费计划，可从 GitHub 部署项目。
 5. Entrypoint 填：
 
 ```text
-deno_server.js
+main.ts
 ```
 
 6. 部署
@@ -43,4 +43,4 @@ https://你的项目名.deno.dev/index.html
 
 ## 说明
 
-这个项目必须用 `deno_server.js` 部署，因为它需要 `/api/quote`、`/api/contracts`、`/api/best` 等服务端接口。
+这个项目必须用 `main.ts` 部署，因为它需要 `/api/quote`、`/api/contracts`、`/api/best` 等服务端接口。

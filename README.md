@@ -22,7 +22,7 @@ Use this option if Render asks for a credit card.
 2. Open `https://dash.deno.com`.
 3. Create a new project from GitHub.
 4. Select this repository.
-5. Entrypoint: `deno_server.js`.
+5. Entrypoint: `main.ts`.
 6. Deploy.
 
 Open:
